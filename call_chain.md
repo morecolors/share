@@ -23,6 +23,7 @@ func|`是`|string|回调的函数名||"onBattleFinish"
 * 远程服务端代码，return返回的数据会返回给客户端
     * session：服务端为本次请求生成的唯一key
     * param：客户端的请求参数
+
 ```
 local function doOnceBattle(session, param)
     ...
@@ -36,6 +37,7 @@ end
 * 客户端回调函数代码
     * ret：服务端返回的数据
     * ...：调用remoteCall时传入的模式参数和回调参数
+
 ```
 function onBattleFinish(ret, ...)
 end
@@ -55,6 +57,7 @@ func|`是`|string|回调的函数名||"onBattleFinish"
 ...|`否`|any|模式参数和回调参数|参考[参数说明](#3)|COMMON_CONST.CALL_MODE.COMMON, ...
 
 * 被调用服务代码
+
 ```
 local function createReport(source, cid, param)
     ...
@@ -66,6 +69,7 @@ function __init__()
 end
 ```
 * 回调函数
+
 ```
 function onBattleFinish(ret, ...)
 end
@@ -83,6 +87,7 @@ end
         * PUBLIC_CLUSTER_TOOL.remoteCall(nodeName, serviceName, method, param, mod, func, COMMON_CONST.CALL_MODE.SERVICE, source, cid, ...)
         * 省略号是回调参数
     * ==补充说明：当没有回调参数，且是普通模式调用的情况下，调用可简化为PUBLIC_CLUSTER_TOOL.remoteCall(nodeName, serviceName, method, param, mod, func)==
+
 ```
 CALL_MODE = {
 	COMMON = 0,						-- 普通模式，后跟0个模式参数
@@ -101,6 +106,7 @@ CALL_MODE = {
 * call调用发起后，有3种方式可以返回数据给调用者
 1. 立即返回
     * srv_5服务收到请求后，并没有再发起call的调用，在被调用函数末尾把数据return回去，返回代码如下
+
 ```
 local function doOnceBattle(session, param)
     ...
@@ -113,6 +119,7 @@ end
 ```
 2. 回调函数返回
     * srv_2、srv_3、srv_4都是相同的返回方式，在call调用的回调函数末尾return返回，返回示例如下
+
 ```
 local function doOnceBattle(session, param)
     PUBLIC_CLUSTER_TOOL.remoteCall(nodeName, serviceName, method, param, mod, "func", COMMON_CONST.CALL_MODE.NODE, session, ...)
