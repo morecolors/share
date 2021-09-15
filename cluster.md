@@ -15,8 +15,7 @@
 	    * [接收方](#12)
     * [错误处理](#8)
     * [热更新节点配置文件](#9)
-<b id="1">新增线程</b>
-=================
+## <b id="1">新增线程</b>
 * 新增的线程只有一个ClusterMgr
     * 线程继承关系ClusterMgr->EvThread->ThreadBase，类的主要成员如下图 
 	* ![ClusterMgr类成员+函数](https://user-images.githubusercontent.com/50430941/133437078-f8734c63-31b3-414f-91c5-895b0128cfc0.png)
