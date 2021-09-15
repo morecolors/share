@@ -96,6 +96,7 @@
     * ClusterMgr线程主要是实现集群间的通信
         * 基本逻辑是worker线程中的服务（调用者）需要发起远端异步调用时，向ClusterMgr线程发送消息，ClusterMgr收到消息后，连接服务端，然后把远端异步调用请求发给服务端。服务端的ClusterMgr线程收到请求后，根据请求参数把远端异步调用请求转发给被调用者，被调用者处理完请求后，原路把结果返回给调用者。
     * 其它线程查看参考文档[信长C++引擎文档](#10)的 **线程模型**
+
 ## <b id="2">线程启动</b>
 * 在日志线程启动完后，会启动一条ClusterMgr线程。
 * ![ClusterMgr内存模型](https://user-images.githubusercontent.com/50430941/133437320-0a8519b8-4bf5-4a6b-9d34-0f8a486f27d9.png)
@@ -106,6 +107,7 @@
         * ![evpaires实例](https://user-images.githubusercontent.com/50430941/133437369-251d43b2-ef40-4376-98f9-88f0dae07d21.png)
         * 最后，创建线程，在线程内跑CluaterMgr::run这个函数
 * 其它线程的启动可以查看参考文档[信长C++引擎文档](#10)的 **线程启动机制**
+
 ## <b id="3">新增服务</b>
 * 新增的服务有两个
     * clusterserver：集群通信的服务端消息处理服务
@@ -140,6 +142,7 @@
     * ![服务发起call调用](https://user-images.githubusercontent.com/50430941/133437471-98948fec-b8b7-4d40-9063-cba916b0f5c5.png)
     * remoteSend不需要返回
     * ![服务send消息到远程程服务器](https://user-images.githubusercontent.com/50430941/133437508-4b5c8cf7-e654-4cc3-a792-fe9723c0337f.png)
+
 ## <b id="4">服务启动</b>
 * 配置说明
     * 服务器的启动命令示例(以后可能会修改启动命令，但是nodename参数肯定会有)：nohup ./evpt nodename &
@@ -161,11 +164,13 @@
     * clusterserver服务会在doAfterInit（初始化完成后）中发消息给ClusterMgr，监听配置在clustername.lua中自己ip所对应的端口。
     * ![server端口监听](https://user-images.githubusercontent.com/50430941/133437545-b21c5814-fdde-4d39-996e-d1abbce396bd.png)
 * 补充说明：现在的设计是clusterserver服务通知ClusterMgr线程开启监听。如果由ClusterMgr线程自己去开启监听，由于ClusterMgr线程比clusterserver服务先启动，当ClusterMgr线程收到连接，并建立连接后，开始收数据包，这时发接收到的消息包给clusterserver进行处理，clusterserver服务可能还没创建或者没初始化完成，导致消息传递中断了，服务器会出现各种奇怪的错误，增加业务处理的复杂性。
+
 ## <b id="6">集群客户端与服务器建立连接</b>
 * 第一次往某个服务端发起远程调用请求时，客户端内部：
     * connectStatusDict中与服务端的连接状态为disconnect，请求会放到requestCache中。clusterclient服务会发消息给ClusterMgr线程，connectStatusDict中与服务端的连接状态转变为connecting，ClusterMgr线程开始连接服务端。连接成功建立后，connectStatusDict中与服务端的连接状态变为connected，把requestCache中的请求发给服务端，并把requestCache中的与这个服务端相关的请求生成唯一session后，转移到session2context中。
 * 下图补充说明：已用红字标明先后步骤，其中蓝箭头是发起连接的步骤，黑箭头是服务器监听的步骤，红箭头是客户端连接成功的步骤。
 * ![新建连接](https://user-images.githubusercontent.com/50430941/133437608-0b68edda-dbf6-4318-906a-b66350a40c7e.png)
+
 ## <b id="7">发起远程异步调用</b>
 * <b id="20">使用场景说明</b>
     * remoteCall是用于一个节点的服务调用另一个节点的某个服务，因为目前框架无法挂起，所以被调用者的服务==不能再向其它服务或者节点发起调用==
@@ -207,6 +212,7 @@
     * 当服务端的clusterMgr线程收到request的消息包时，会在参数列表上加上connectionId（与客户端连接实例的会话ID），把消息包push到clusterserver的消息队列中。
     * clusterserver收到request请求包，把参数解析成table后，根据参数中的servicename，把消息push到对于的服务的mq中。
     * 被调用者收到request请求后，根据参数method调用具体的函数，把函数返回结果经由被调用者->clusterserver->clusterMgr->网络传输，返回给客户端
+
 ## <b id="8">错误处理</b>
 * 不管客户端还是服务端，套接字在加入event_base监听时，都会设置错误回调（Session::_error_cb_）和可读回调(Session::_read_cb_)函数，当某个端口发生网络错误时，回调Session::_error_cb_。
     * ![网络错误回调](https://user-images.githubusercontent.com/50430941/133437942-2bce3603-1211-4031-9619-669dc03b705b.png)
@@ -232,11 +238,13 @@
     * ![网络错误处理_客户端](https://user-images.githubusercontent.com/50430941/133437988-cc1292ac-6ef4-4b12-995f-b467201d9b18.png)
     * 服务端处理流程
         * 从tcpServer的_sessionDict_中移除报错的session实例，并销毁session实例。如果之后clusterserver返回请求结果，在找不到对应的sessionId的情况下，丢弃这个请求。
+
 ## <b id="9">热更新</b>
 * 后台gm指令发送到game进程
     * ![节点配置文件热更](https://user-images.githubusercontent.com/50430941/133438023-3c6877c6-1803-41da-9d29-07ba91d27fb6.png)
 * 节点收到热更指令后，会做两件事
     * reWrite节点的配置文件clustername.lua，把最新的节点数据覆盖掉已有的clustername.lua文件内容。
     * reLoad节点的配置文件clustername.lua，并与原有的内存数据比较，如果新配置中没有原来的某个节点配置，则close对应的节点连接，并且触发onDisconnect事件。
+
 ## <b id="10">参考文档</b>
 * [信长C++引擎文档](https://space.dingtalk.com/s/gwHOAu3kAQLOjJ-QYQPaACBkMGMyYWVlZDcxMTQ0M2M5OGFhY2YxNThlNzg4ZTdkYw) 密码: HyJr
