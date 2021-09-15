@@ -18,7 +18,7 @@
 ## <h2 id="1">新增线程</h2>
 * 新增的线程只有一个ClusterMgr
     * 线程继承关系ClusterMgr->EvThread->ThreadBase，类的主要成员如下图 
-![clustermgr类成员+函数.png](https://note.youdao.com/yws/res/2029/WEBRESOURCE261185cb7a54c96af7800069fc1f92e1)
+	* ![ClusterMgr类成员+函数](https://user-images.githubusercontent.com/50430941/133437078-f8734c63-31b3-414f-91c5-895b0128cfc0.png)
     * ThreadBase是线程基类，只有一个重要的成员变量：
         * _thread_：线程实例，创建一个新的线程，在这个线程内跑传进来的函数。
     * EvThread类是使用了libevent库的线程基类
@@ -97,12 +97,12 @@
     * 其它线程查看参考文档[信长C++引擎文档](#10)的 **线程模型**
 ## <h2 id="2">线程启动</h2>
 * 在日志线程启动完后，会启动一条ClusterMgr线程。
-![clustermgr内存模型.png](https://note.youdao.com/yws/res/2049/WEBRESOURCEd8dbb0045abaf4e0a746817ed13d62a0)
+* ![ClusterMgr内存模型](https://user-images.githubusercontent.com/50430941/133437320-0a8519b8-4bf5-4a6b-9d34-0f8a486f27d9.png)
     * 线程构造函数中，会调用基类构造函数，初始化类的成员数据。
     * ClusterMgr线程start函数中，调用基类的EvThread::runThread函数
         * 首先会初始化lua虚拟机的环境，把一些通用的C库函数库函数和线程内专用的C库函数都注册到lua虚拟机，然后把lua脚本加载到lua虚拟机，调用lua的__main__函数
         * 接着执行_evpaires_的初始化，调用EvPairs::initPairs函数，设置好_evpairs_的回调函数和监听事件。_evpairs_内部维护一个libevnet的读写缓存，负责处理与内核的数据读写。
-![evpaires实例.png](https://note.youdao.com/yws/res/2053/WEBRESOURCEdeaaef2301b6069c6fc49084e527baf3)
+        * ![evpaires实例](https://user-images.githubusercontent.com/50430941/133437369-251d43b2-ef40-4376-98f9-88f0dae07d21.png)
         * 最后，创建线程，在线程内跑CluaterMgr::run这个函数
 * 其它线程的启动可以查看参考文档[信长C++引擎文档](#10)的 **线程启动机制**
 ## <h2 id="3">新增服务</h2>
@@ -136,9 +136,9 @@
             * onDisconnect：连接断开连接事件
     * 新增服务用于处理远端异步调用，clientservice发起远端异步调用，由客户端的ClusterMgr线程发给服务端的ClusterMgr线程，服务端的ClusterMgr线程转发给clientservice服务，clientservice转发给具体的业务处理完后
     * remoteCall原路把处理结果返回
-![服务发起call调用.png](https://note.youdao.com/yws/res/2209/WEBRESOURCE50ad255b80c0aaba4df20d3439e25ded)
+    * ![服务发起call调用](https://user-images.githubusercontent.com/50430941/133437471-98948fec-b8b7-4d40-9063-cba916b0f5c5.png)
     * remoteSend不需要返回
-![服务send消息到远程程服务器.png](https://note.youdao.com/yws/res/2212/WEBRESOURCEf617070419618bdcfea544b7b4697a9d)
+    * ![服务send消息到远程程服务器](https://user-images.githubusercontent.com/50430941/133437508-4b5c8cf7-e654-4cc3-a792-fe9723c0337f.png)
 ## <h2 id="4">服务启动</h2>
 * 配置说明
     * 服务器的启动命令示例(以后可能会修改启动命令，但是nodename参数肯定会有)：nohup ./evpt nodename &
@@ -158,25 +158,25 @@
         * clusterName数据结构：{nodeName = {ip=string, port=int}}
     * clusterclient服务启动后自加载配置，以及用配置初始化connectStatusDict，格式connectStatusDict={nodeName=disconnect|connecting|connected}，这个字典记录了与其它节点的连接状态
     * clusterserver服务会在doAfterInit（初始化完成后）中发消息给ClusterMgr，监听配置在clustername.lua中自己ip所对应的端口。
-![server端口监听.png](https://note.youdao.com/yws/res/2225/WEBRESOURCEf81843c689c338f1bd2c73c7edf00893)
+    * ![server端口监听](https://user-images.githubusercontent.com/50430941/133437545-b21c5814-fdde-4d39-996e-d1abbce396bd.png)
 * 补充说明：现在的设计是clusterserver服务通知ClusterMgr线程开启监听。如果由ClusterMgr线程自己去开启监听，由于ClusterMgr线程比clusterserver服务先启动，当ClusterMgr线程收到连接，并建立连接后，开始收数据包，这时发接收到的消息包给clusterserver进行处理，clusterserver服务可能还没创建或者没初始化完成，导致消息传递中断了，服务器会出现各种奇怪的错误，增加业务处理的复杂性。
 ## <h2 id="6">集群客户端与服务器建立连接</h2>
 * 第一次往某个服务端发起远程调用请求时，客户端内部：
     * connectStatusDict中与服务端的连接状态为disconnect，请求会放到requestCache中。clusterclient服务会发消息给ClusterMgr线程，connectStatusDict中与服务端的连接状态转变为connecting，ClusterMgr线程开始连接服务端。连接成功建立后，connectStatusDict中与服务端的连接状态变为connected，把requestCache中的请求发给服务端，并把requestCache中的与这个服务端相关的请求生成唯一session后，转移到session2context中。
 * 下图补充说明：已用红字标明先后步骤，其中蓝箭头是发起连接的步骤，黑箭头是服务器监听的步骤，红箭头是客户端连接成功的步骤。
-![新建连接.png](https://note.youdao.com/yws/res/2688/WEBRESOURCEf72e2e46040dedefd1bbbc7fecd689bf)
+* ![新建连接](https://user-images.githubusercontent.com/50430941/133437608-0b68edda-dbf6-4318-906a-b66350a40c7e.png)
 ## <h2 id="7">发起远程异步调用</h2>
 * <b id="20">使用场景说明</b>
     * remoteCall是用于一个节点的服务调用另一个节点的某个服务，因为目前框架无法挂起，所以被调用者的服务==不能再向其它服务或者节点发起调用==
     * 使用示例
         * 调用者
-            * ![调用示例.png](https://note.youdao.com/yws/res/5576/WEBRESOURCE6dc184aa73bb24d0f05f6a800f7baba9)
+            * ![调用示例](https://user-images.githubusercontent.com/50430941/133437663-68a666be-4c5c-473b-8584-f203eadf7d90.png)
     * 补充：如果被调用者需要向其它服务或节点发起请求，则只能使用remoteSend
         * remoteSend使用示例
-            * ![remotesend调用示例.png](https://note.youdao.com/yws/res/5585/WEBRESOURCEde556f9c4815c785d6dae5227a52bacf)
+            * ![remoteSend调用示例](https://user-images.githubusercontent.com/50430941/133437744-863b70bf-955a-4594-883b-2010185711cf.png)
             * remoteSend的参数只有4个，与remoteCall的前4个参数一样
-            * ![remotesend请求返回.png](https://note.youdao.com/yws/res/5612/WEBRESOURCEe298c0ad8d5415c8ce6fd1aad9f1601e)
-    * ![协议包.png](https://note.youdao.com/yws/res/5405/WEBRESOURCE1cdf2d46440079801aa8d233305e5284)
+            * ![remoteSend请求返回](https://user-images.githubusercontent.com/50430941/133437780-3d0a5148-e3a5-4108-a91a-c3849d9d7a22.png)
+    * ![协议包](https://user-images.githubusercontent.com/50430941/133437815-37d70d38-6ab0-498c-b6db-5ce7e2d0b7fa.png)
     * 组成2字节消息包长度+1字节整包标识+4字节session+data
         * 消息包长度：消息包的总字节数
         * 整包标识：0x80整包，0x81包头，0x82包体（可存在多个中间包），0x83包尾
@@ -202,13 +202,13 @@
         * 如果status==connected，发送请求，把请求缓存到session2context
     * 收到网络返回消息包时，通过之前的请求缓存，原路返回给调用者
 * <b id="12">接收方remoteCall响应流程</b>
-![response.png](https://note.youdao.com/yws/res/2694/WEBRESOURCE881c5b8e26154327486a3cdf1138368e)
+    * ![request](https://user-images.githubusercontent.com/50430941/133437893-d5e19385-3490-4bbf-91a0-448a8484f4b9.png)
     * 当服务端的clusterMgr线程收到request的消息包时，会在参数列表上加上connectionId（与客户端连接实例的会话ID），把消息包push到clusterserver的消息队列中。
     * clusterserver收到request请求包，把参数解析成table后，根据参数中的servicename，把消息push到对于的服务的mq中。
     * 被调用者收到request请求后，根据参数method调用具体的函数，把函数返回结果经由被调用者->clusterserver->clusterMgr->网络传输，返回给客户端
 ## <h2 id="8">错误处理</h2>
 * 不管客户端还是服务端，套接字在加入event_base监听时，都会设置错误回调（Session::_error_cb_）和可读回调(Session::_read_cb_)函数，当某个端口发生网络错误时，回调Session::_error_cb_。
-![网络错误回调.png](https://note.youdao.com/yws/res/2587/WEBRESOURCE74d5142941e59a0e5ee92c2318de60da)
+    * ![网络错误回调](https://user-images.githubusercontent.com/50430941/133437942-2bce3603-1211-4031-9619-669dc03b705b.png)
     * 客户端处理流程
         * 从tcpClient的_sessionDict_中移除报错的session实例，并销毁session实例。发消息通知clusterclient服务，clusterclient把对应的连接状态设置成disconnect，然后清除requestCache和session2context中报错节点的请求缓存，移除缓存的时候，需要一一发消息给调用者，给调用者返回错误码，让调用者移除缓存。
         * 示例，调用者处理远程调用返回结果
@@ -228,12 +228,12 @@
                     end
                 end
             ```
-![网络错误处理_客户端.png](https://note.youdao.com/yws/res/2624/WEBRESOURCE5db4487cdf91de310232ca57e1abf3d1)
+    * ![网络错误处理_客户端](https://user-images.githubusercontent.com/50430941/133437988-cc1292ac-6ef4-4b12-995f-b467201d9b18.png)
     * 服务端处理流程
         * 从tcpServer的_sessionDict_中移除报错的session实例，并销毁session实例。如果之后clusterserver返回请求结果，在找不到对应的sessionId的情况下，丢弃这个请求。
 ## <h2 id="9">热更新</h2>
 * 后台gm指令发送到game进程
-![节点配置文件热更.png](https://note.youdao.com/yws/res/2727/WEBRESOURCEa3c1a4aaf5e6ff989553a9831a5c8d07)
+    * ![节点配置文件热更](https://user-images.githubusercontent.com/50430941/133438023-3c6877c6-1803-41da-9d29-07ba91d27fb6.png)
 * 节点收到热更指令后，会做两件事
     * reWrite节点的配置文件clustername.lua，把最新的节点数据覆盖掉已有的clustername.lua文件内容。
     * reLoad节点的配置文件clustername.lua，并与原有的内存数据比较，如果新配置中没有原来的某个节点配置，则close对应的节点连接，并且触发onDisconnect事件。
