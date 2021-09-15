@@ -19,6 +19,7 @@ param|`否`|any|远程节点函数参数||20
 mod|`是`|string|回调的模块名||"BATTLE"
 func|`是`|string|回调的函数名||"onBattleFinish"
 ...|`否`|any|模式参数和回调参数|参考[参数说明](#3)|COMMON_CONST.CALL_MODE.COMMON, ...
+
 * 远程服务端代码，return返回的数据会返回给客户端
     * session：服务端为本次请求生成的唯一key
     * param：客户端的请求参数
@@ -52,6 +53,7 @@ param|`否`|any|被调用函数的参数||10
 mod|`是`|string|回调的模块名||"BATTLE"
 func|`是`|string|回调的函数名||"onBattleFinish"
 ...|`否`|any|模式参数和回调参数|参考[参数说明](#3)|COMMON_CONST.CALL_MODE.COMMON, ...
+
 * 被调用服务代码
 ```
 local function createReport(source, cid, param)
