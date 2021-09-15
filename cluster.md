@@ -195,7 +195,7 @@
     * remoteSend不返回，没有请求缓存，相比call，少了缓存数据和结果返回的一系列处理。
     * 补充：remoteSend的所有处理在remoteCall中都可以找到，所以用remoteCall来阐述跨进程的函数调用流程。
 * <b id="11">发送方remoteCall调用流程</b>
-![request.png](https://note.youdao.com/yws/res/2471/WEBRESOURCE24927cd4cdc25b86ab3149bbc6da1dd6)
+    * ![request](https://user-images.githubusercontent.com/50430941/133438553-68e43312-9703-4a6f-98d1-1cdfd6cff7c5.png)
     * 客户端服务调用者（简称调用者）通过pushMessage给clusterclient发起远程调用，clusterclient检查请求参数中nodeName对应连接的status：
         * 如果status==disconnect，把请求放到requestCache中，走建立连接的流程，连接建立后，把请求发给远程服务器，把requestCache中的与这个服务端相关的请求生成唯一session后，然后把请求转移到session2context中
         * 如果status==connecting，把请求放到requestCache中，等连接完成的回调，回调中处理请求：发送请求，把requestCache中的与这个服务端相关的请求生成唯一session后，然后把请求转移到session2context中。
