@@ -102,7 +102,7 @@ CALL_MODE = {
 
 ## <b id="4">调用链构建</b>
 * 假设有个业务，服务的调用逻辑如下图所示
-* ![混合调用](https://user-images.githubusercontent.com/50430941/133444559-5efc429f-29b2-4e3b-8732-144a5bb75852.png)
+* ![混合调用](https://user-images.githubusercontent.com/50430941/136487438-e1160061-3681-4510-82a6-8e60e614c937.png)
 * call调用发起后，有3种方式可以返回数据给调用者
 1. 立即返回
     * srv_5服务收到请求后，并没有再发起call的调用，在被调用函数末尾把数据return回去，返回代码如下
